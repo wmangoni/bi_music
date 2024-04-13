@@ -3,72 +3,70 @@ from bs4 import BeautifulSoup
 import os
 from unidecode import unidecode
 import re
-
+import string
 
 def remover_caracteres_especiais(palavra):
     # Substituir todos os caracteres que não são letras ou números por uma string vazia
     palavra_sem_especiais = re.sub(r'[^a-zA-Z0-9]', '', palavra)
     return palavra_sem_especiais
 
+def extrair_nome_arquivo(song_title, href_formated):
+    # Formata o nome do arquivo removendo caracteres especiais e substituindo espaços por underscores
+    s_formated = unidecode(remover_caracteres_especiais(song_title.replace(" ", "_")))
+    return f'conteudo_artistas/{href_formated}/{s_formated}.txt'
+
+def salvar_lyric(nome_arquivo, lyric_content):
+    # Garante que o diretório existe
+    os.makedirs(os.path.dirname(nome_arquivo), exist_ok=True)
+
+    # Salva o conteúdo da letra em um arquivo
+    with open(nome_arquivo, 'w', encoding='utf-8') as file:
+        for l in lyric_content:
+            #print(str(l.contents))
+            file.write(str(l.contents).replace("<br/>", "\n").replace("]", "").replace("[", "").replace(", ", "").replace("'", "").replace("\"", ""))
 
 def scrape_letras_musicais(url_base):
-    # Faz uma solicitação GET para a URL base
-    response = requests.get(url_base + "/letra/A/")
-    
-    # Verifica se a solicitação foi bem-sucedida (código de status 200)
-    if response.status_code == 200:
-        # Parseia o HTML da página usando BeautifulSoup
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Encontra todas as tags <a> dentro das <li>
-        links_artistas = artistas = soup.find('ul', class_='homeRecommendedArtists-artists').find_all('a')
-        
-        # Cria um diretório para salvar os arquivos se não existir
-        if not os.path.exists('conteudo_artistas'):
-            os.makedirs('conteudo_artistas')
-        
-        # Itera sobre os links dos artistas
-        for link_artista in links_artistas:
-            # Extrai o atributo href de cada tag <a>
-            href = link_artista['href']
-            href_formated = unidecode(remover_caracteres_especiais(href.replace("/", "")))
 
-            response_artista = requests.get(url_base + href)
-            if response_artista.status_code == 200:
+    # Cria um array com todas as letras do alfabeto
+    letras_alfabeto = list(string.ascii_uppercase)
 
-                soup_artista = BeautifulSoup(response_artista.text, 'html.parser')
+    for letra in letras_alfabeto:
 
-                songs = soup_artista.find('ol', class_='artist-songList-content').find_all('a')
+        response = requests.get(url_base + "/letra/" + letra.upper() + "/")
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            links_artistas = soup.find('ul', class_='homeRecommendedArtists-artists').find_all('a')
 
-                print(songs[0])
+            # Garante que o diretório existe
+            os.makedirs('conteudo_artistas', exist_ok=True)
 
-                for song in songs:
-                    print(song.encode('utf-8'))
+            for link_artista in links_artistas:
+                href = link_artista['href']
+                href_formated = unidecode(remover_caracteres_especiais(href.replace("/", "")))
+                scrape_musica_artista(url_base + href, href_formated)
+        else:
+            print("Erro ao fazer a requisição HTTP para a URL base.")
 
-                    resp_song = requests.get(url_base + song['href'])
-
-                    soup_song = BeautifulSoup(resp_song.text, 'html.parser')
-
-                    lyric = soup_song.find('div', class_='lyric-original')
-                    print(lyric.text.strip().encode('utf-8'))
-
-                    #Se não existir o diretório, temos que criar um
-                    if not os.path.exists(f'conteudo_artistas/{href_formated}'):
-                        os.makedirs(f'conteudo_artistas/{href_formated}')
-
-                    # Salva o conteúdo em um arquivo separado
-                    s = song['title'].replace("/", "_")
-                    s_formated = unidecode(remover_caracteres_especiais(s.replace(" ", "_")))
-                    nome_arquivo = f'conteudo_artistas/{href_formated}/{s_formated}.txt'
-
-                    with open(nome_arquivo, 'w', encoding='utf-8') as file:
-                        file.write(lyric.text.strip())
-
-                    print(f"Conteúdo do artista {href.encode('utf-8')} salvo com sucesso em {nome_arquivo.encode('utf-8')}.")
+def scrape_musica_artista(url_artista, href_formated):
+    response_artista = requests.get(url_artista)
+    if response_artista.status_code == 200:
+        soup_artista = BeautifulSoup(response_artista.text, 'html.parser')
+        songs = soup_artista.find('ol', class_='artist-songList-content').find_all('a')
+        for song in songs:
+            print(song['href'].encode('utf-8'))
+            resp_song = requests.get(url_base + song['href'])
+            if resp_song.status_code == 200:
+                soup_song = BeautifulSoup(resp_song.text, 'html.parser')
+                lyric = soup_song.find('div', class_='lyric-original').find_all("p")
+                if lyric:
+                    nome_arquivo = extrair_nome_arquivo(song['title'], href_formated)
+                    salvar_lyric(nome_arquivo, lyric)
+                else:
+                    print(f"Letra não encontrada para a música: {song['title']}")
             else:
-                print(f"Erro ao fazer a requisição HTTP para {url_completa}.")
+                print(f"Erro ao fazer a requisição HTTP para {url_base + song['href']}.")
     else:
-        print("Erro ao fazer a requisição HTTP para a URL base.")
+        print(f"Erro ao fazer a requisição HTTP para {url_artista}.")
 
 # URL base da página
 url_base = 'https://www.letras.mus.br'
