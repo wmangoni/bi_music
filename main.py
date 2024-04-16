@@ -46,8 +46,10 @@ def salvar_lyric(nome_arquivo, lyric_content, title_song):
 def scrape_letras_musicais(url_base):
 
     # Cria um array com todas as letras do alfabeto
-    #letras_alfabeto = list(string.ascii_uppercase)
-    letras_alfabeto = ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X', 'Y', 'W', 'Z']
+    letras_alfabeto = list(string.ascii_uppercase)
+    
+    # se quiser executar apenas algumas letras pode fazer assim:
+    # letras_alfabeto = ['R', 'S', 'T', 'U', 'V', 'X', 'Y', 'W', 'Z']
 
     for letra in letras_alfabeto:
 
@@ -106,7 +108,7 @@ def scrape_musica_artista(url_artista, href_formated, music_classification):
                 list = soup_song.find('div', class_='lyric-menu').find_all('a')
 
                 for i in list:
-                    if 'data-action' in i:
+                    if 'data-action' in str(i):
                         if  i['data-action'] == 'Nav Cifra':
                             href_cifra = i['href']
                             resp_song_cifra = requests.get(href_cifra) ### EXEMPLO: https://www.cifraclub.com.br/king-king/you-stopped-the-rain/
@@ -172,5 +174,8 @@ url_base_cifra = 'https://www.cifraclub.com.br'
 
 # Chama a função de scraping
 scrape_letras_musicais(url_base)
+
+#aqui pe pra rodar só um artista
+#scrape_musica_artista('https://www.letras.mus.br/legiao-urbana/', 'legiao-urbana', 'Pop Rock')
 
 ## Ideia de raspagem futura: https://www.palcomp3.com.br/mp3/A/todos.htm
