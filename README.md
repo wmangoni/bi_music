@@ -1,7 +1,7 @@
-#Como Iniciar a API Localmente
+# Como Iniciar a API Localmente
 Este guia passo a passo te ensinará como clonar o repositório, instalar as dependências e executar a API localmente.
 
-###Pré-requisitos:
+### Pré-requisitos:
 
 Ter o Python 3.6 ou superior instalado:
 Verifique a versão do Python: python3 --version
@@ -13,7 +13,7 @@ Ter um editor de código de sua preferência:
 Opções populares: Visual Studio Code, PyCharm, Sublime Text
 Passos:
 
-##1. Clonando o Repositório:
+## 1. Clonando o Repositório:
 
 Abra um terminal ou prompt de comando.
 Navegue até o diretório onde você deseja clonar o repositório.
@@ -26,7 +26,7 @@ git clone https://github.com/wmangoni/bi_music.git
 Use o código com cuidado.
 Substitua SEU_NOME_DE_USUARIO pelo seu nome de usuário no GitHub e SEU_NOME_DO_REPOSITÓRIO pelo nome do repositório.
 
-##2. Instalando as Dependências:
+## 2. Instalando as Dependências:
 
 Acesse o diretório do projeto clonado:
 
@@ -42,7 +42,7 @@ Bash
 pip install -r requirements.txt
 ```
 
-##3. Executando a API:
+## 3. Executando a API:
 
 Ative um ambiente virtual (recomendado):
 Crie um ambiente virtual (opcional): python3 -m venv .venv
