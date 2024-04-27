@@ -3,7 +3,7 @@ Este guia passo a passo te ensinará como clonar o repositório, instalar as dep
 
 ### Pré-requisitos:
 
-Ter o Python 3.6 ou superior instalado:
+Ter o Python 3.8 ou superior instalado:
 Verifique a versão do Python: python3 --version
 Se necessário, instale o Python: https://www.python.org/downloads/
 Ter o pip instalado:
@@ -23,16 +23,13 @@ Clone o repositório usando o seguinte comando:
 git clone https://github.com/wmangoni/bi_music.git
 ```
 
-Use o código com cuidado.
-Substitua SEU_NOME_DE_USUARIO pelo seu nome de usuário no GitHub e SEU_NOME_DO_REPOSITÓRIO pelo nome do repositório.
-
 ## 2. Instalando as Dependências:
 
 Acesse o diretório do projeto clonado:
 
 ```
 Bash
-cd SEU_NOME_DO_REPOSITÓRIO
+cd bi_music
 ```
 
 Instale as dependências com o seguinte comando:
@@ -44,10 +41,7 @@ pip install -r requirements.txt
 
 ## 3. Executando a API:
 
-Ative um ambiente virtual (recomendado):
-Crie um ambiente virtual (opcional): python3 -m venv .venv
-Ative o ambiente virtual: source .venv/bin/activate
-Inicie a API com o seguinte comando:
+Basta rodar o comando abaixo, conforme especificado na documentação oficial (https://fastapi.tiangolo.com/)
 
 ```
 Bash
