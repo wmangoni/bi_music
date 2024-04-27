@@ -18,21 +18,29 @@ Passos:
 Abra um terminal ou prompt de comando.
 Navegue até o diretório onde você deseja clonar o repositório.
 Clone o repositório usando o seguinte comando:
-Bash
+
+```Bash
 git clone https://github.com/wmangoni/bi_music.git
+```
+
 Use o código com cuidado.
 Substitua SEU_NOME_DE_USUARIO pelo seu nome de usuário no GitHub e SEU_NOME_DO_REPOSITÓRIO pelo nome do repositório.
 
 ##2. Instalando as Dependências:
 
 Acesse o diretório do projeto clonado:
+
+```
 Bash
 cd SEU_NOME_DO_REPOSITÓRIO
-Use o código com cuidado.
+```
+
 Instale as dependências com o seguinte comando:
+
+```
 Bash
 pip install -r requirements.txt
-Use o código com cuidado.
+```
 
 ##3. Executando a API:
 
@@ -40,9 +48,12 @@ Ative um ambiente virtual (recomendado):
 Crie um ambiente virtual (opcional): python3 -m venv .venv
 Ative o ambiente virtual: source .venv/bin/activate
 Inicie a API com o seguinte comando:
+
+```
 Bash
 uvicorn main:app --reload
-Use o código com cuidado.
+```
+
 Isso iniciará o servidor Uvicorn e executará a API. Você poderá acessá-la em http://localhost:8000.
 A opção --reload garante que o servidor reinicie automaticamente quando você fizer alterações no código.
 Observações:
