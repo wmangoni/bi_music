@@ -16,12 +16,13 @@ max_workers = 6
 executor = ThreadPoolExecutor(max_workers=max_workers)
 
 MODO_TESTE = False
-DIRRETORIO_PRINCIPAL = 'conteudo_artistas'
+DIRETORIO_PRINCIPAL = 'conteudo_artistas'
 #CLASSE_LINK_ARTISTAS_OLD = ('ul', 'homeRecommendedArtists-artists')
 CLASSE_LINK_ARTISTAS = ('ul', 'cnt-list cnt-list--col3')
 CLASSE_CONTEUDO = ('ol', 'artist-songList-content')
 CLASSE_CONTEUDO_COMPLETO = ('ul', 'songList-table-content')
 CLASSE_TITLE = ('h1', 'head-title')
+CLASSE_TITLE_SONG = ('h1', 'textStyle-primary')
 CLASSE_LYRIC = ('div', 'lyric-original')
 CLASSE_LYRIC_INFO = ('div', 'lyric-info')
 CLASSE_LYRIC_COMPOSITION = ('div', 'lyric-info-composition')
@@ -46,7 +47,7 @@ def remover_caracteres_especiais(palavra):
 def extrair_nome_arquivo(song_title, href_formated):
     # Formata o nome do arquivo removendo caracteres especiais e substituindo espaços por underscores
     s_formated = unidecode(remover_caracteres_especiais(song_title.replace(" ", "_")))
-    return f'{DIRRETORIO_PRINCIPAL}/{href_formated}/{s_formated}.txt'
+    return f'{DIRETORIO_PRINCIPAL}/{href_formated}/{s_formated}.txt'
 
 
 def salvar_cifra(nome_arquivo, cifra, title_song):
@@ -92,18 +93,19 @@ def scrape_letras_musicais(base_url):
     #letras_alfabeto = list(string.ascii_uppercase)
 
     # se quiser executar apenas algumas letras pode fazer assim:
-    letras_alfabeto = ['Q', 'R', 'S', 'T', 'U']
+    letras_alfabeto = ['Y']
 
     for letra in letras_alfabeto:
 
-        response = requests.get(
-            base_url + "/letra/" + letra.upper() + "/artists_ajax.html")  # EXEMPLO: https://www.letras.mus.br/letra/K/artists_ajax.html
+        response = requests.get(base_url + "/letra/" + letra.upper() + "/artists_ajax.html")
+        # EXEMPLO: https://www.letras.mus.br/letra/K/artists_ajax.html
+
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             links_artistas = soup.find(CLASSE_LINK_ARTISTAS[0], class_=CLASSE_LINK_ARTISTAS[1]).find_all('a')
 
             # Garante que o diretório existe
-            os.makedirs(DIRRETORIO_PRINCIPAL, exist_ok=True)
+            os.makedirs(DIRETORIO_PRINCIPAL, exist_ok=True)
 
             results = []
 
@@ -134,21 +136,43 @@ def scrape_letras_musicais(base_url):
 
 
 def scrape_musica_artista(url_artista, href_formated, music_classification, img_src):
-    response_artista = requests.get(
-        url_artista + "mais_acessadas.html")  # EXEMPLO: https://www.letras.mus.br/king-king/mais_acessadas.html
-    print("url_artista " + url_artista)
+
+    response_artista = ""
+
+    if "https://www.cifraclub.com.br" in url_artista:
+        url_artista = url_artista.replace("https://www.cifraclub.com.br", "")
+
+    if "https://www.letras.mus.brhttp" in url_artista:
+        url_artista = url_artista.replace("https://www.letras.mus.brhttp", "http")
+
+    try:
+        response_artista = requests.get(url_artista + "mais_acessadas.html")
+    except Exception as e:
+        print(e)
+        return
+    
+    # EXEMPLO: https://www.letras.mus.br/king-king/mais_acessadas.html
+
+    print("url_artista: " + url_artista + "mais_acessadas.html")
 
     if response_artista.status_code == 200:
 
         soup_artista = BeautifulSoup(response_artista.text, 'html.parser')
 
+        #print(f"soup_artista: {soup_artista}")
+
         name_artistic = soup_artista.find(CLASSE_TITLE[0], class_=CLASSE_TITLE[1])
 
-        file_name = f'{DIRRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
+        name = ""
+
+        if name_artistic is not None:
+            name = name_artistic.get_text();
+
+        file_name = f'{DIRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         with open(file_name, 'w', encoding='utf-8') as file:
-            file.write(name_artistic.get_text() + "\n" + music_classification + "\n" + img_src)
+            file.write(name + "\n" + music_classification + "\n" + img_src)
 
 
         # Esse return serve pra só coletar o metadado e cair fora sem pegar as musicas
@@ -162,17 +186,25 @@ def scrape_musica_artista(url_artista, href_formated, music_classification, img_
         for song in songs:
 
             print(song['href'].encode('utf-8'))
-            resp_song = requests.get(
-                url_base + song['href'])  # EXEMPLO: https://www.letras.mus.br/king-king/you-stopped-the-rain/
+
+            song_href = song['href']
+
+            if "https://www.cifraclub.com.br" in song['href']:
+                song_href = song['href'].replace("https://www.cifraclub.com.br", "")
+
+            if "https://www.letras.mus.br" in song['href']:
+                song_href = song['href'].replace("https://www.letras.mus.br", "")
+
+
+            resp_song = requests.get(url_base + song_href)
+            # EXEMPLO: https://www.letras.mus.br/king-king/you-stopped-the-rain/
 
             title = song.find('span').get_text()
 
             if resp_song.status_code == 200:
 
                 soup_song = BeautifulSoup(resp_song.text, 'html.parser')
-                title_song = soup_song.find(CLASSE_TITLE[0], class_=CLASSE_TITLE[1])
-
-                os.system('clear')
+                title_song = soup_song.find(CLASSE_TITLE_SONG[0], class_=CLASSE_TITLE_SONG[1])
 
                 if soup_song is not None:
 
@@ -185,7 +217,7 @@ def scrape_musica_artista(url_artista, href_formated, music_classification, img_
                         continue
 
                     menu_list = soup_song.find('div', class_='lyric-menu').find_all('a')
-                    
+
                     results = []
 
                     for i in menu_list:
@@ -211,20 +243,20 @@ def scrape_musica_artista(url_artista, href_formated, music_classification, img_
                         salvar_lyric(nome_arquivo, lyric, title_song, composition)
                     else:
                         print(f"Letra não encontrada para a música: {title}")
-                        file_name = f'{DIRRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
+                        file_name = f'{DIRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
                         with open(file_name, 'a', encoding='utf-8') as file:
                             file.write("\n" + f"Letra não encontrada para a música: {title}")
 
                 else:
-                    print(f"Erro ao fazer a requisição HTTP para {url_base + song['href']}.")
-                    file_name = f'{DIRRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
+                    print(f"Erro ao fazer a requisição HTTP para {url_base + song_href}.")
+                    file_name = f'{DIRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
                     with open(file_name, 'a', encoding='utf-8') as file:
-                        file.write("\n" + f"Erro ao fazer a requisição HTTP para {url_base + song['href']}.")
+                        file.write("\n" + f"Erro ao fazer a requisição HTTP para {url_base + song_href}.")
             else:
                 print(f"Erro ao fazer a requisição HTTP para {url_base + song['href']}.")
-                file_name = f'{DIRRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
+                file_name = f'{DIRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
                 with open(file_name, 'a', encoding='utf-8') as file:
-                    file.write("\n" + f"Erro ao fazer a requisição HTTP para {url_base + song['href']}.")
+                    file.write("\n" + f"Erro ao fazer a requisição HTTP para {url_base + song_href}.")
 
             if MODO_TESTE:
                 break
@@ -246,12 +278,12 @@ def handle_cifra(resp_song_cifra, song, href_formated, title_song):
             salvar_cifra(nome_arquivo, cifra, title_song)
         else:
             print(f"Cifra não encontrada para a música: {title}")
-            file_name = f'{DIRRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
+            file_name = f'{DIRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
             with open(file_name, 'a', encoding='utf-8') as file:
                 file.write("\n" + f"Cifra não encontrada para a música: {title}")
     else:
         print(f"Erro ao fazer a requisição HTTP para {url_base_cifra + song['href']}.")
-        file_name = f'{DIRRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
+        file_name = f'{DIRETORIO_PRINCIPAL}/{href_formated}/metadata.txt'
         with open(file_name, 'a', encoding='utf-8') as file:
             file.write("\n" + f"Erro ao fazer a requisição HTTP para {url_base_cifra + song['href']}.")
 
@@ -265,7 +297,7 @@ inicio = time.time()
 # Chama a função de scraping
 scrape_letras_musicais(url_base)
 fim = time.time()
- 
+
 tempo_execucao = fim - inicio  # Calcula o tempo de execução em segundos
 print(f"Tempo de execução: {tempo_execucao:.2f} segundos")
 
