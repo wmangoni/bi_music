@@ -62,22 +62,58 @@ def extract_lyrics_and_metadata(folder, letra):
               "Composition": composition
       })
 
-  # Cria o DataFrame a partir da lista de dados
-  df = pd.DataFrame(data)
-
-  # Salva o DataFrame em um arquivo CSV
-  df.to_csv(letra + "_lyrics.csv", index=False, encoding="utf-8")
+  return data;
 
 # Caminho da pasta principal
 root_dir = "conteudo_artistas/"
 
 results = []
 
-letras = ["u", "v", "x", "z", "y", "w"]
+def percorre_letra(letra):
 
-for letra in letras:
+  d = []
+
   for folder in os.listdir(root_dir):
     if folder.startswith(letra):
-      #extract_lyrics_and_metadata(os.path.join(root_dir, folder))
-      future = executor.submit(extract_lyrics_and_metadata, os.path.join(root_dir, folder), letra)
-      results.append(future)
+      print(f"folder >> : {folder}")
+      d = d + extract_lyrics_and_metadata(os.path.join(root_dir, folder), letra)
+
+  # Cria o DataFrame a partir da lista de dados
+  df = pd.DataFrame(d)
+
+  delimitador="\\"
+
+  # Salva o DataFrame em um arquivo CSV
+  df.to_csv(letra + "_lyrics.csv", index=False, encoding="utf-8", sep=delimitador)
+      
+
+# percorre_letra("a")
+# results.append(executor.submit(percorre_letra, "a"))
+# results.append(executor.submit(percorre_letra, "b"))
+# results.append(executor.submit(percorre_letra, "c"))
+# results.append(executor.submit(percorre_letra, "d"))
+# results.append(executor.submit(percorre_letra, "e"))
+# results.append(executor.submit(percorre_letra, "f"))
+
+# results.append(executor.submit(percorre_letra, "g"))
+# results.append(executor.submit(percorre_letra, "h"))
+# results.append(executor.submit(percorre_letra, "i"))
+# results.append(executor.submit(percorre_letra, "j"))
+# results.append(executor.submit(percorre_letra, "k"))
+# results.append(executor.submit(percorre_letra, "l"))
+
+# results.append(executor.submit(percorre_letra, "m"))
+# results.append(executor.submit(percorre_letra, "n"))
+# results.append(executor.submit(percorre_letra, "o"))
+# results.append(executor.submit(percorre_letra, "p"))
+# results.append(executor.submit(percorre_letra, "q"))
+# results.append(executor.submit(percorre_letra, "r"))
+
+results.append(executor.submit(percorre_letra, "s"))
+results.append(executor.submit(percorre_letra, "t"))
+results.append(executor.submit(percorre_letra, "u"))
+results.append(executor.submit(percorre_letra, "v"))
+results.append(executor.submit(percorre_letra, "x"))
+results.append(executor.submit(percorre_letra, "y"))
+results.append(executor.submit(percorre_letra, "w"))
+results.append(executor.submit(percorre_letra, "z"))
