@@ -18,6 +18,11 @@ caminho_arquivo = os.path.join(pasta_projeto, 'bi_music.csv')
 
 load_dotenv(os.path.join(pasta_projeto, '.env'))
 
+if not os.path.exists(caminho_arquivo):
+    zip_path = os.path.join(pasta_projeto, 'bi_music.zip')
+    msg_extra = " Extraia-o executando: unzip bi_music.zip" if os.path.exists(zip_path) else ""
+    raise FileNotFoundError(f"Arquivo '{caminho_arquivo}' não encontrado.{msg_extra}")
+
 # Ler o arquivo CSV usando o pandas
 df = pd.read_csv(caminho_arquivo, encoding='utf-8')
 
@@ -26,7 +31,7 @@ df = df.dropna()
 df = df.reset_index(drop=True)
 
 # Modelo de recomendação (treina na 1ª execução, ~40s, depois carrega do cache em recomendador/cache/)
-recomendador = Recomendador(caminho_arquivo)
+recomendador = Recomendador(caminho_arquivo, df_bruto=df)
 
 def extract_song_name(lyrics_text):
   if lyrics_text:
@@ -125,10 +130,10 @@ def get_recommendations(
             raise HTTPException(502, str(e))
         faixas += [(f['artistas'], f['nome']) for f in faixas_sp]
     for m in musicas or []:
-        artista, _, titulo = m.partition(' - ')
-        if not titulo:
+        artista, sep, titulo = m.partition(' - ')
+        if not sep or not artista.strip() or not titulo.strip():
             raise HTTPException(400, f'Formato inválido em "{m}": use "Artista - Música"')
-        faixas.append(([artista], titulo))
+        faixas.append(([artista.strip()], titulo.strip()))
 
     encontradas, nao_encontradas = [], []
     for artistas, titulo in faixas:
@@ -143,17 +148,36 @@ def get_recommendations(
 
     pesos = {'letra': peso_letra, 'palavra_acorde': peso_palavra_acorde, 'ritmo': peso_ritmo,
              'acordes': peso_acordes, 'artista_genero': peso_artista_genero}
+    if sum(pesos.values()) <= 0:
+        raise HTTPException(400, 'Ao menos um peso de parâmetro deve ser maior que zero')
+
+    # Se faixas foram encontradas no acervo, usamos elas como sementes principais
+    # para letra, ritmo e acordes. As demais músicas dos mesmos artistas entram como
+    # sementes fracas (apenas no componente artista_genero), evitando diluir o perfil
+    # musical da faixa solicitada pela discografia inteira do artista.
+    # Se nenhuma faixa foi encontrada, usamos as músicas dos artistas como fallback.
+    if encontradas:
+        sementes_principais = encontradas
+        fracas = list(dict.fromkeys(dos_artistas + dos_generos))
+    else:
+        sementes_principais = dos_artistas
+        fracas = dos_generos
+
     recomendacoes = recomendador.recomendar(
-        sementes=list(dict.fromkeys(encontradas + dos_artistas)), excluir=encontradas,
-        sementes_fracas=dos_generos, pesos=pesos, limite=limit)
+        sementes=sementes_principais,
+        excluir=encontradas,
+        sementes_fracas=fracas,
+        pesos=pesos,
+        limite=limit,
+    )
 
     cat = recomendador.catalogo
     return {
         'entrada': {
             'faixas': len(faixas),
-            'encontradas_no_acervo': [f"{cat.Artist[i]} - {cat.SongName[i]}" for i in encontradas],
+            'encontradas_no_acervo': [f"{cat['Artist'].iloc[i]} - {cat['SongName'].iloc[i]}" for i in encontradas],
             'nao_encontradas': nao_encontradas,
-            'artistas_no_acervo': sorted(cat.Artist[dos_artistas].unique().tolist()),
+            'artistas_no_acervo': sorted(cat['Artist'].iloc[dos_artistas].unique().tolist()) if dos_artistas else [],
             'generos_mapeados': generos_mapeados,
         },
         'pesos': pesos,

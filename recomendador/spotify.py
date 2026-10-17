@@ -18,7 +18,7 @@ CONTAS = 'https://accounts.spotify.com'
 ESCOPOS = 'playlist-read-private playlist-read-collaborative'
 ARQUIVO_TOKEN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.spotify_token.json')
 
-_estados = set()
+_estados = {}  # estado -> timestamp
 
 
 class ErroSpotify(Exception):
@@ -44,8 +44,14 @@ def redirect_uri():
 
 def url_login():
     cid, _ = _credenciais()
+    # Limpa estados expirados (mais de 10 minutos)
+    agora = time.time()
+    expirados = [k for k, v in _estados.items() if agora - v > 600]
+    for k in expirados:
+        _estados.pop(k, None)
+
     estado = secrets.token_urlsafe(16)
-    _estados.add(estado)
+    _estados[estado] = agora
     return f'{CONTAS}/authorize?' + urlencode({
         'client_id': cid, 'response_type': 'code', 'redirect_uri': redirect_uri(),
         'scope': ESCOPOS, 'state': estado,
@@ -68,17 +74,24 @@ def _salvar(token):
 
 
 def concluir_login(code, estado):
-    if estado not in _estados:
+    agora = time.time()
+    criado = _estados.pop(estado, None)
+    if criado is None or (agora - criado > 600):
         raise ErroSpotify('Login inválido ou expirado: abra /spotify/login novamente')
-    _estados.discard(estado)
     _salvar(_pedir_token({'grant_type': 'authorization_code', 'code': code, 'redirect_uri': redirect_uri()}))
 
 
 def _token_usuario():
     if not os.path.exists(ARQUIVO_TOKEN):
         raise LoginNecessario('Faça login no Spotify abrindo /spotify/login')
-    with open(ARQUIVO_TOKEN) as f:
-        token = json.load(f)
+    try:
+        with open(ARQUIVO_TOKEN) as f:
+            token = json.load(f)
+        if 'expira' not in token or 'access_token' not in token or 'refresh_token' not in token:
+            raise LoginNecessario('Token do Spotify incompleto: abra /spotify/login novamente')
+    except (json.JSONDecodeError, OSError):
+        raise LoginNecessario('Token do Spotify corrompido: abra /spotify/login novamente')
+
     if time.time() > token['expira'] - 60:
         novo = _pedir_token({'grant_type': 'refresh_token', 'refresh_token': token['refresh_token']})
         novo.setdefault('refresh_token', token['refresh_token'])  # o Spotify nem sempre devolve um novo
@@ -108,16 +121,18 @@ def id_playlist(playlist):
     raise ErroSpotify('Playlist inválida: use o link, a URI ou o ID da playlist')
 
 
-def faixas_da_playlist(playlist):
-    """Retorna [{'nome': str, 'artistas': [str]}] de todas as faixas."""
+def faixas_da_playlist(playlist, max_faixas=500):
+    """Retorna [{'nome': str, 'artistas': [str]}] de faixas da playlist (até max_faixas)."""
     url = f'{API}/playlists/{id_playlist(playlist)}/items'
     params = {'limit': 50}
     faixas = []
-    while url:
+    while url and len(faixas) < max_faixas:
         dados = _get(url, **params)
         for registro in dados.get('items', []):
             t = registro.get('item') or registro.get('track')  # a API renomeou "track" para "item"
             if t and t.get('name') and t.get('type', 'track') == 'track':
                 faixas.append({'nome': t['name'], 'artistas': [a['name'] for a in t.get('artists', [])]})
+                if len(faixas) >= max_faixas:
+                    return faixas
         url, params = dados.get('next'), {}
     return faixas
