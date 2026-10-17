@@ -60,3 +60,7 @@ Dicas:
 Utilize um editor de código com suporte a Python para melhor experiência de desenvolvimento.
 Configure um IDE com o interpretador Python correto e as bibliotecas instaladas.
 Explore a documentação do FastAPI e Uvicorn para se familiarizar com suas funcionalidades.
+
+## Recomendador de músicas
+
+Veja [RECOMENDADOR.md](RECOMENDADOR.md) para as correções da API, o endpoint `GET /recommendations` e a integração com o Spotify.
