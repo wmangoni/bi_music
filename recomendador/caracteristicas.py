@@ -20,7 +20,7 @@ DIATONICO = {0: 'maior', 2: 'menor', 4: 'menor', 5: 'maior', 7: 'maior', 9: 'men
 RE_ACORDE = re.compile(r'^([A-G])([#b]?)(.*?)(?:/([A-G][#b]?))?$')
 RE_TAG = re.compile(r'<[^>]+>')
 RE_B = re.compile(r'<b>(.*?)</b>')
-RE_TAB = re.compile(r'<span class="tablatura">(.*?)</span></span>', re.S)
+RE_TAB = re.compile(r'<span class="tablatura">(.*?)(?:</span>\s*)+', re.S)
 RE_LINHA_TAB = re.compile(r'^\s*[eBGDAE]\|')
 RE_PALAVRA = re.compile(r"[\wÀ-ÿ']+")
 

@@ -210,15 +210,15 @@ As técnicas são padronizadas **só entre as músicas que têm tablatura**. Ass
 
 ### 4.4 Cálculo da nota final
 
-1. **Perfil:** para cada parâmetro, é a média dos vetores das sementes, ou seja, as músicas da playlist encontradas no acervo **e** as demais músicas dos mesmos artistas.
+1. **Perfil:** para cada parâmetro, é a média dos vetores das sementes. Quando a playlist possui faixas encontradas no catálogo, elas são usadas como sementes principais nos parâmetros acústicos/líricos (`letra`, `palavra_acorde`, `ritmo` e `acordes`); as demais músicas dos mesmos artistas entram como sementes de apoio apenas em `artista_genero`, evitando que a discografia inteira do artista dilua as características musicais das faixas informadas. Se nenhuma faixa for encontrada no catálogo, as músicas dos artistas atuam como fallback.
 2. **Similaridade:** cosseno de cada música do acervo com o perfil.
-3. **Percentil:** cada similaridade vira um percentil de 0 a 1. Sem isso, os parâmetros TF-IDF (de 0 a 0,2) e os numéricos (de -1 a 1) teriam escalas diferentes, e os pesos não seriam comparáveis.
+3. **Percentil:** similaridades estritamente positivas viram percentis de 0 a 1 entre as candidatas com afinidade real. Músicas com similaridade zero recebem nota zero, evitando empates com pontuações artificiais.
 4. **Média ponderada por música:** só entram os parâmetros que a música tem. Uma música sem cifra é avaliada só por `letra` e `artista_genero`, sem ser zerada nos demais.
 5. As músicas que já estão na playlist são excluídas, e as `limit` maiores notas são devolvidas.
 
 ### 4.5 Cache
 
-O modelo treinado é salvo em `recomendador/cache/modelo_v{VERSAO}_{mtime_do_csv}.joblib`, uma pasta ignorada pelo git. O cache é refeito sozinho quando o CSV muda. **Ao alterar a extração de características ou o `_treinar()`, incremente `VERSAO_CACHE`** em `recomendador/modelo.py`.
+O modelo treinado é salvo em `recomendador/cache/modelo_v{VERSAO}_{mtime_do_csv}.joblib` (atualmente versão 3 com matrizes esparsas e indexação O(1)), uma pasta ignorada pelo git. O cache é refeito sozinho quando o CSV muda. **Ao alterar a extração de características ou o `_treinar()`, incremente `VERSAO_CACHE`** em `recomendador/modelo.py`.
 
 ---
 
