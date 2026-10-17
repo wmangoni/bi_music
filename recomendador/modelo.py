@@ -76,10 +76,13 @@ class Recomendador:
         tem_cifra = cat['Chords'].notna().to_numpy()
         feats = [extrair(c) if isinstance(c, str) else None for c in cat['Chords']]
 
+        min_df = 2 if len(cat) > 10 else 1
+        max_df = 0.5 if len(cat) > 10 else 1.0
+
         m = {}
-        m['letra'] = TfidfVectorizer(min_df=2, max_df=0.5, sublinear_tf=True, max_features=50000) \
+        m['letra'] = TfidfVectorizer(min_df=min_df, max_df=max_df, sublinear_tf=True, max_features=50000) \
             .fit_transform(cat['Lyrics'])
-        m['palavra_acorde'] = TfidfVectorizer(min_df=2, sublinear_tf=True, token_pattern=r'\S+') \
+        m['palavra_acorde'] = TfidfVectorizer(min_df=min_df, sublinear_tf=True, token_pattern=r'\S+') \
             .fit_transform([f['tokens_palavra_acorde'] if f else '' for f in feats])
 
         def densa(chave, mascara):

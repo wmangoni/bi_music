@@ -87,7 +87,7 @@ def _token_usuario():
     try:
         with open(ARQUIVO_TOKEN) as f:
             token = json.load(f)
-        if 'expira' not in token or 'access_token' not in token:
+        if 'expira' not in token or 'access_token' not in token or 'refresh_token' not in token:
             raise LoginNecessario('Token do Spotify incompleto: abra /spotify/login novamente')
     except (json.JSONDecodeError, OSError):
         raise LoginNecessario('Token do Spotify corrompido: abra /spotify/login novamente')
@@ -133,6 +133,6 @@ def faixas_da_playlist(playlist, max_faixas=500):
             if t and t.get('name') and t.get('type', 'track') == 'track':
                 faixas.append({'nome': t['name'], 'artistas': [a['name'] for a in t.get('artists', [])]})
                 if len(faixas) >= max_faixas:
-                    break
+                    return faixas
         url, params = dados.get('next'), {}
     return faixas
